@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -39,7 +39,7 @@ const CATEGORY_LABELS: Record<CategoryType, string> = {
   urban: '都市传说',
 };
 
-export default function AllVideosPage() {
+const VideosContent = () => {
   const searchParams = useSearchParams();
   const [allVideos, setAllVideos] = useState<VideoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -397,5 +397,13 @@ export default function AllVideosPage() {
         </>
       )}
     </div>
+  );
+};
+
+export default function AllVideosPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">加载中...</div>}>
+      <VideosContent />
+    </Suspense>
   );
 }
