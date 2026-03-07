@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>维尔利金融 - 出金申请</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 顶部导航栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #e8e8e8;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1890ff;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-name {
+            margin-right: 20px;
+            font-size: 14px;
+        }
+        
+        .logout-btn {
+            background-color: #f5f5f5;
+            border: 1px solid #d9d9d9;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        /* 主体内容 */
+        .content {
+            display: flex;
+            gap: 40px;
+        }
+        
+        /* 左侧账户信息 */
+        .account-info {
+            flex: 1;
+            background-color: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+        }
+        
+        .info-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1890ff;
+            margin-top: 10px;
+        }
+        
+        /* 右侧出金表单 */
+        .withdrawal-form {
+            flex: 1;
+            background-color: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+        }
+        
+        .form-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-item {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        .select-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .submit-btn:active {
+            background-color: #096dd9;
+        }
+        
+        /* 客服悬浮窗 */
+        .customer-service {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #1890ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.4);
+            transition: transform 0.3s;
+        }
+        
+        .customer-service:hover {
+            transform: scale(1.1);
+        }
+        
+        /* 客服对话框（默认隐藏） */
+        .service-dialog {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+        
+        .dialog-header {
+            padding: 12px 16px;
+            background-color: #1890ff;
+            color: white;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dialog-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .close-btn {
+            cursor: pointer;
+        }
+        
+        .dialog-body {
+            padding: 16px;
+        }
+        
+        .service-message {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .service-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        
+        .send-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <div class="header">
+            <div class="logo">维尔利金融</div>
+            <div class="user-info">
+                <span class="user-name">您好，张三</span>
+                <button class="logout-btn">退出登录</button>
+            </div>
+        </div>
+        
+        <!-- 主体内容 -->
+        <div class="content">
+            <!-- 左侧账户信息 -->
+            <div class="account-info">
+                <div class="info-title">账户信息</div>
+                <div class="info-item">
+                    <span class="info-label">姓名</span>
+                    <span class="info-value">张三</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">身份证号</span>
+                    <span class="info-value">1101**********1234</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">账户状态</span>
+                    <span class="info-value" style="color: #52c41a;">正常</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">账户余额</span>
+                    <span class="info-value balance">¥128,500.00</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">上次登录</span>
+                    <span class="info-value">2026-03-06 10:23</span>
+                </div>
+            </div>
+            
+            <!-- 右侧出金表单 -->
+            <div class="withdrawal-form">
+                <div class="form-title">出金申请</div>
+                <form id="withdrawalForm">
+                    <div class="form-item">
+                        <label class="form-label">出金金额（元）</label>
+                        <input type="number" class="form-input" placeholder="请输入出金金额" min="100" max="128500" required>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">收款地址（欧易）</label>
+                        <input type="text" class="form-input" placeholder="请输入欧易钱包地址" required>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">出金方式</label>
+                        <select class="select-box" required>
+                            <option value="">请选择出金方式</option>
+                            <option value="crypto">加密货币（USDT）</option>
+                            <option value="bank">银行转账</option>
+                        </select>
+                    </div>
+                    <button type="button" class="submit-btn" onclick="submitWithdrawal()">提交申请</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 客服悬浮窗 -->
+    <div class="customer-service" onclick="toggleServiceDialog()">
+        客服
+    </div>
+    
+    <!-- 客服对话框 -->
+    <div class="service-dialog" id="serviceDialog">
+        <div class="dialog-header">
+            <span class="dialog-title">在线客服</span>
+            <span class="close-btn" onclick="closeServiceDialog()">×</span>
+        </div>
+        <div class="dialog-body">
+            <div class="service-message">您好，我是维尔利客服008，请问有什么可以帮助您的？</div>
+            <input type="text" class="service-input" placeholder="请输入您的问题">
+            <button class="send-btn">发送</button>
+        </div>
+    </div>
+    
+    <script>
+        // 提交出金申请
+        function submitWithdrawal() {
+            // 模拟跳转到缴费页面
+            window.location.href = 'payment_page.html';
+        }
+        
+        // 切换客服对话框显示/隐藏
+        function toggleServiceDialog() {
+            const dialog = document.getElementById('serviceDialog');
+            dialog.style.display = dialog.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        // 关闭客服对话框
+        function closeServiceDialog() {
+            document.getElementById('serviceDialog').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-03-06T12:00:00.000000",
+  "series": [
+    {
+      "id": "biaoge_cai_fen",
+      "title": "表哥踩坟",
+      "description": "一个关于表哥登山踩坟引发的灵异事件三部曲",
+      "stories": [
+        {
+          "order": 1,
+          "name": "缘起",
+          "color": "white",
+          "bvid": "BV19v4HekEdh",
+          "episode": 133,
+          "part": "上",
+          "title": "【道听途说133上】我的爸妈在背对着我，向我伸手跺脚过来了！",
+          "timestamp": 1410,
+          "time_str": "23:30",
+          "cover_url": "https://i1.hdslb.com/bfs/archive/c7fd2c159e8e4217110e195dddb41b051b8e4f19.jpg@672w_378h_1c.avif",
+          "cover_local": "covers/BV19v4HekEdh.jpg"
+        },
+        {
+          "order": 2,
+          "name": "扩散",
+          "color": "red",
+          "bvid": "BV1RCZGY5ED4",
+          "episode": 146,
+          "part": "上",
+          "title": "【道听途说146上】表哥死后舅舅一家居然要害死我，把我表哥换回来！",
+          "timestamp": 50,
+          "time_str": "00:50",
+          "cover_url": "https://i1.hdslb.com/bfs/archive/5a19e03569f34fde2a9156905ed5bac6234765f7.jpg@672w_378h_1c.avif",
+          "cover_local": "covers/BV1RCZGY5ED4.jpg"
+        },
+        {
+          "order": 3,
+          "name": "终局",
+          "color": "black",
+          "bvid": "BV1Gg6iB9EbS",
+          "episode": 0,
+          "part": "特辑",
+          "title": "【道听途说特辑】三小时尽情享用！发小表哥登山还有后续？灵异照片视频大合集！",
+          "timestamp": 150,
+          "time_str": "02:30",
+          "cover_url": "https://i1.hdslb.com/bfs/archive/9204ef70ee29d387fbfc91209ea690525be9ce13.jpg@672w_378h_1c.avif",
+          "cover_local": "covers/BV1Gg6iB9EbS.jpg"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "buke",
+  "private": true,
+  "version": "1.0.0",
+  "description": "怖客 - 全简中互联网恐怖灵异内容聚合平台",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -r start",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.11.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

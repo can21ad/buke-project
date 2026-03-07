@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #1a1a2e;
+    --foreground: #f0f0f0;
+    --primary: #e94560;
+    --secondary: #16c79a;
+  }
+
+  body {
+    @apply bg-dark text-light min-h-screen;
+  }
+
+  a {
+    @apply text-primary hover:underline;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-light;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-darker rounded-lg p-4 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-700;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-red-600;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white hover:bg-green-600;
+  }
+
+  .input {
+    @apply bg-darker border border-gray-700 rounded-md px-4 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  .skeleton {
+    @apply bg-gray-700 animate-pulse rounded;
+  }
+}
