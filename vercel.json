@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "packages/web/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "packages/web/$1"
+    }
+  ],
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm -r build",
+  "outputDirectory": "packages/web/.next"
+}
