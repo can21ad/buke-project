@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恐怖视频批量分析控制台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hacker-green': '#00FF00',
+                        'hacker-red': '#FF0000',
+                        'hacker-bg': '#000000',
+                        'hacker-dark': '#121212',
+                        'hacker-gray': '#333333'
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            }
+            .bg-grid {
+                background-image: 
+                    linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-hacker-bg text-hacker-green min-h-screen font-mono">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 头部控制区 -->
+        <header class="mb-8 bg-hacker-dark p-4 rounded-lg border border-hacker-green/30">
+            <h1 class="text-3xl font-bold text-center mb-6 text-shadow">
+                <i class="fa fa-terminal mr-2"></i>恐怖视频批量分析控制台
+            </h1>
+            
+            <div class="flex flex-wrap gap-4 justify-between items-center">
+                <!-- 文件上传 -->
+                <div class="flex-1 min-w-[250px]">
+                    <label for="csvFile" class="block mb-2 text-sm font-medium">
+                        <i class="fa fa-file-text-o mr-2"></i>选择CSV文件
+                    </label>
+                    <input 
+                        type="file" 
+                        id="csvFile" 
+                        accept=".csv" 
+                        class="w-full bg-hacker-gray text-hacker-green border border-hacker-green/30 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-hacker-green"
+                    >
+                </div>
+                
+                <!-- 开始按钮 -->
+                <button 
+                    id="startBtn" 
+                    class="bg-hacker-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all hover:shadow-lg hover:shadow-hacker-red/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    <i class="fa fa-play mr-2"></i>开始批量执行
+                </button>
+                
+                <!-- 导出按钮 -->
+                <button 
+                    id="exportBtn" 
+                    class="bg-hacker-green hover:bg-green-700 text-hacker-bg font-bold py-3 px-6 rounded-lg transition-all hover:shadow-lg hover:shadow-hacker-green/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    <i class="fa fa-download mr-2"></i>导出分析结果 (CSV)
+                </button>
+            </div>
+        </header>
+        
+        <!-- 进度统计看板 -->
+        <div class="mb-8 bg-hacker-dark p-4 rounded-lg border border-hacker-green/30">
+            <h2 class="text-xl font-semibold mb-4">
+                <i class="fa fa-dashboard mr-2"></i>进度统计
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div class="bg-hacker-gray p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">总数量</div>
+                    <div class="text-2xl font-bold" id="totalCount">0</div>
+                </div>
+                <div class="bg-hacker-gray p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">已完成</div>
+                    <div class="text-2xl font-bold text-hacker-green" id="completedCount">0</div>
+                </div>
+                <div class="bg-hacker-gray p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">失败数</div>
+                    <div class="text-2xl font-bold text-hacker-red" id="failedCount">0</div>
+                </div>
+                <div class="bg-hacker-gray p-3 rounded-lg">
+                    <div class="text-sm text-gray-400">进度</div>
+                    <div class="text-2xl font-bold" id="progressPercentage">0%</div>
+                </div>
+            </div>
+            
+            <!-- 进度条 -->
+            <div class="w-full bg-hacker-gray rounded-full h-4">
+                <div id="progressBar" class="bg-hacker-green h-4 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- 实时监控表格 -->
+        <div class="bg-hacker-dark p-4 rounded-lg border border-hacker-green/30 overflow-x-auto">
+            <h2 class="text-xl font-semibold mb-4">
+                <i class="fa fa-table mr-2"></i>实时监控
+            </h2>
+            
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-hacker-green/30">
+                        <th class="py-3 px-4 text-left">BV号</th>
+                        <th class="py-3 px-4 text-left">视频标题</th>
+                        <th class="py-3 px-4 text-left">当前状态</th>
+                        <th class="py-3 px-4 text-left">综合评分</th>
+                        <th class="py-3 px-4 text-left">专家短评</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTable">
+                    <!-- 动态添加行 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // 全局变量
+        let bvList = []; // BV号数组
+        let resultsData = []; // 分析结果数据
+        let isProcessing = false; // 是否正在处理
+        
+        // API配置
+        const deepseekApiKey = 'sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3';
+        const deepseekApiUrl = 'https://openrouter.fans/v1/chat/completions';
+        const bilibiliApiUrl = 'http://localhost:3001/api/v1/videos';
+        
+        // DOM元素
+        const csvFileInput = document.getElementById('csvFile');
+        const startBtn = document.getElementById('startBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const totalCountEl = document.getElementById('totalCount');
+        const completedCountEl = document.getElementById('completedCount');
+        const failedCountEl = document.getElementById('failedCount');
+        const progressPercentageEl = document.getElementById('progressPercentage');
+        const progressBarEl = document.getElementById('progressBar');
+        const resultTableEl = document.getElementById('resultTable');
+        
+        // 初始化事件监听
+        function initEventListeners() {
+            // CSV文件上传
+            csvFileInput.addEventListener('change', handleCsvUpload);
+            
+            // 开始批量执行
+            startBtn.addEventListener('click', startBatchProcessing);
+            
+            // 导出结果
+            exportBtn.addEventListener('click', exportToCSV);
+        }
+        
+        // 处理CSV文件上传
+        function handleCsvUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                parseCsv(content);
+            };
+            reader.readAsText(file);
+        }
+        
+        // 解析CSV文件
+        function parseCsv(content) {
+            const lines = content.split('\n');
+            bvList = [];
+            
+            // 遍历CSV行，提取BV号
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+                
+                // 查找包含BV的列
+                const columns = trimmedLine.split(',');
+                for (const column of columns) {
+                    const trimmedColumn = column.trim();
+                    if (trimmedColumn.startsWith('BV')) {
+                        bvList.push(trimmedColumn);
+                        break;
+                    }
+                }
+            }
+            
+            // 更新UI
+            totalCountEl.textContent = bvList.length;
+            startBtn.disabled = bvList.length === 0;
+            
+            // 清空表格
+            resultTableEl.innerHTML = '';
+            
+            console.log(`解析完成，共找到 ${bvList.length} 个BV号`);
+        }
+        
+        // 开始批量处理
+        async function startBatchProcessing() {
+            if (isProcessing || bvList.length === 0) return;
+            
+            isProcessing = true;
+            startBtn.disabled = true;
+            exportBtn.disabled = true;
+            
+            // 重置统计数据
+            completedCountEl.textContent = '0';
+            failedCountEl.textContent = '0';
+            progressPercentageEl.textContent = '0%';
+            progressBarEl.style.width = '0%';
+            
+            // 清空结果数据
+            resultsData = [];
+            
+            // 清空表格
+            resultTableEl.innerHTML = '';
+            
+            // 串行处理每个BV号
+            let completed = 0;
+            let failed = 0;
+            
+            for (const bv of bvList) {
+                // 添加表格行
+                const row = addTableRow(bv);
+                
+                try {
+                    // 第一步：提取文案
+                    updateRowStatus(row, '⏳提取文案中');
+                    const videoData = await fetchVideoData(bv);
+                    updateRowTitle(row, videoData.title);
+                    
+                    // 第二步：长文总结
+                    updateRowStatus(row, '🧠AI总结中');
+                    const summary = await generateSummary(videoData.description);
+                    
+                    // 第三步：多维评分
+                    updateRowStatus(row, '💀AI评分中');
+                    const analysis = await analyzeHorrorContent(summary);
+                    
+                    // 更新表格行
+                    updateRowStatus(row, '✅完成');
+                    updateRowScore(row, analysis.scores.overall);
+                    updateRowReason(row, analysis.reason);
+                    
+                    // 保存结果
+                    resultsData.push({
+                        bv: bv,
+                        title: videoData.title,
+                        summary: analysis.summary,
+                        atmosphere: analysis.scores.atmosphere,
+                        psychological: analysis.scores.psychological,
+                        gore: analysis.scores.gore,
+                        overall: analysis.scores.overall,
+                        reason: analysis.reason
+                    });
+                    
+                    completed++;
+                } catch (error) {
+                    console.error(`处理BV号 ${bv} 时出错:`, error);
+                    updateRowStatus(row, '❌失败');
+                    failed++;
+                }
+                
+                // 更新统计数据
+                completedCountEl.textContent = completed;
+                failedCountEl.textContent = failed;
+                
+                // 计算进度
+                const progress = (completed + failed) / bvList.length * 100;
+                progressPercentageEl.textContent = `${Math.round(progress)}%`;
+                progressBarEl.style.width = `${progress}%`;
+                
+                // 限流保护：等待2-3秒
+                await new Promise(resolve => setTimeout(resolve, 2500));
+            }
+            
+            isProcessing = false;
+            exportBtn.disabled = resultsData.length === 0;
+            startBtn.disabled = false;
+            
+            console.log('批量处理完成');
+        }
+        
+        // 获取视频数据
+        async function fetchVideoData(bv) {
+            const response = await fetch(`${bilibiliApiUrl}/${bv}`);
+            if (!response.ok) {
+                throw new Error(`API请求失败: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.code === 200) {
+                return data.data;
+            } else {
+                throw new Error(data.message || '视频不存在');
+            }
+        }
+        
+        // 生成总结
+        async function generateSummary(description) {
+            const requestData = {
+                model: 'deepseek/deepseek-chat',
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个恐怖故事总结专家，请将以下B站恐怖故事视频素材重构为约300字的详细剧情回顾，突出恐怖诡异元素。'
+                    },
+                    {
+                        role: 'user',
+                        content: `将以下B站恐怖故事视频素材重构为约300字的详细剧情回顾，突出恐怖诡异元素：${description}`
+                    }
+                ],
+                temperature: 0.7
+            };
+            
+            const response = await fetch(deepseekApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${deepseekApiKey}`
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API请求失败: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                return data.choices[0].message.content;
+            } else {
+                throw new Error('API返回格式错误');
+            }
+        }
+        
+        // 分析恐怖内容
+        async function analyzeHorrorContent(content) {
+            const requestData = {
+                model: 'deepseek/deepseek-chat',
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个恐怖文学品鉴专家。请阅读用户提交的故事，并返回 JSON 格式的数据：\n1. summary (字符串，50字以内的故事总结)\n2. scores (对象，包含以下 4 个整数，范围 1-5)：\n   - atmosphere (氛围感，悬疑与未知程度)\n   - psychological (心理压迫，细思极恐程度)\n   - gore (视觉冲击，血腥或怪物直观惊吓程度)\n   - overall (综合恐怖指数)\n3. reason (字符串，一句话解释为什么给这个分数)'
+                    },
+                    {
+                        role: 'user',
+                        content: content
+                    }
+                ],
+                temperature: 0.7
+            };
+            
+            const response = await fetch(deepseekApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${deepseekApiKey}`
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API请求失败: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                const aiContent = data.choices[0].message.content;
+                try {
+                    return JSON.parse(aiContent);
+                } catch (parseError) {
+                    throw new Error('JSON解析失败');
+                }
+            } else {
+                throw new Error('API返回格式错误');
+            }
+        }
+        
+        // 添加表格行
+        function addTableRow(bv) {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-hacker-green/20 hover:bg-hacker-gray/50';
+            row.innerHTML = `
+                <td class="py-3 px-4">${bv}</td>
+                <td class="py-3 px-4" id="title-${bv}">-</td>
+                <td class="py-3 px-4" id="status-${bv}">等待中</td>
+                <td class="py-3 px-4" id="score-${bv}">-</td>
+                <td class="py-3 px-4" id="reason-${bv}">-</td>
+            `;
+            resultTableEl.appendChild(row);
+            return row;
+        }
+        
+        // 更新行状态
+        function updateRowStatus(row, status) {
+            const bv = row.cells[0].textContent;
+            document.getElementById(`status-${bv}`).textContent = status;
+        }
+        
+        // 更新行标题
+        function updateRowTitle(row, title) {
+            const bv = row.cells[0].textContent;
+            document.getElementById(`title-${bv}`).textContent = title;
+        }
+        
+        // 更新行评分
+        function updateRowScore(row, score) {
+            const bv = row.cells[0].textContent;
+            document.getElementById(`score-${bv}`).textContent = score;
+        }
+        
+        // 更新行短评
+        function updateRowReason(row, reason) {
+            const bv = row.cells[0].textContent;
+            document.getElementById(`reason-${bv}`).textContent = reason;
+        }
+        
+        // 导出为CSV
+        function exportToCSV() {
+            if (resultsData.length === 0) return;
+            
+            // CSV表头
+            const headers = ['BV号', '标题', '提取的总结', '氛围分', '心理分', '血腥分', '综合分', '专家短评'];
+            
+            // 构建CSV内容
+            let csvContent = headers.join(',') + '\n';
+            
+            for (const data of resultsData) {
+                const row = [
+                    data.bv,
+                    `"${data.title.replace(/"/g, '""')}"`,
+                    `"${data.summary.replace(/"/g, '""')}"`,
+                    data.atmosphere,
+                    data.psychological,
+                    data.gore,
+                    data.overall,
+                    `"${data.reason.replace(/"/g, '""')}"`
+                ];
+                csvContent += row.join(',') + '\n';
+            }
+            
+            // 创建下载链接
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'horror_analysis_results.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 初始化
+        initEventListeners();
+    </script>
+</body>
+</html>

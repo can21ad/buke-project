@@ -2,6 +2,91 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AISummaryBox from '../components/AISummaryBox';
+import VisitorStatsPanel from '../components/VisitorStatsPanel';
+import AIRecommendations from '../components/AIRecommendations';
+
+// 全局样式
+const GlobalStyles = () => (
+  <style jsx global>{`
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    .animate-slide-in {
+      animation: slideIn 0.3s ease-out forwards;
+    }
+    
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(107, 33, 168, 0.5);
+      border-radius: 2px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: rgba(107, 33, 168, 0.8);
+    }
+  `}</style>
+);
 
 interface Story {
   id: number;
@@ -275,48 +360,58 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-950 to-black relative overflow-hidden">
+      <GlobalStyles />
       <div className="fixed inset-0 pointer-events-none opacity-5">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('/images/horror-pattern.png')] bg-repeat"></div>
       </div>
       
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
+        {/* 查看全部视频按钮 */}
+        <Link
+          href="/videos"
+          className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white text-sm font-bold rounded-lg hover:from-red-700 hover:to-red-900 transition-all duration-300 shadow-lg shadow-red-900/30 hover:shadow-red-900/50 animate-pulse"
+        >
+          📺 全部视频
+        </Link>
+        
+        {/* 搜索按钮 */}
         <button
           onClick={() => setShowSearchPanel(!showSearchPanel)}
-          className="w-12 h-12 rounded-full bg-gray-900/80 border border-gray-700 flex items-center justify-center hover:bg-gray-800 transition-colors shadow-lg shadow-red-900/20"
+          className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50"
         >
           <span className="text-xl">🔍</span>
         </button>
         
         {showSearchPanel && (
-          <div className="absolute top-14 right-0 w-80 bg-gray-900/95 border border-gray-700 rounded-lg p-4 shadow-2xl shadow-black/50">
+          <div className="absolute top-16 right-0 w-80 bg-gray-900/95 border border-gray-700 rounded-lg p-4 shadow-2xl shadow-black/50 animate-fade-in">
             <div className="mb-4">
               <h3 className="text-sm font-bold text-red-500 mb-2 flex items-center gap-2">
-                <span>�️</span> 视频搜索
+                <span>🎬</span> 视频搜索
               </h3>
               <form onSubmit={handleVideoSearch} className="relative">
                 <input
                   type="text"
                   placeholder="搜索视频..."
-                  className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-red-500 focus:outline-none"
+                  className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-red-500 focus:outline-none transition-all duration-300"
                   value={videoSearchQuery}
                   onChange={(e) => handleVideoSearchChange(e.target.value)}
                 />
               </form>
               {showVideoResults && videoSearchResults.length > 0 && (
-                <div className="mt-2 max-h-48 overflow-y-auto bg-black/50 rounded border border-gray-800">
+                <div className="mt-2 max-h-48 overflow-y-auto bg-black/50 rounded border border-gray-800 animate-slide-in">
                   {videoSearchResults.map((video) => (
                     <div
                       key={video.bvid}
-                      className="flex items-center gap-2 p-2 hover:bg-gray-800/50 cursor-pointer border-b border-gray-800 last:border-b-0"
+                      className="flex items-center gap-2 p-2 hover:bg-gray-800/50 cursor-pointer border-b border-gray-800 last:border-b-0 transition-colors duration-200"
                       onClick={() => handleVideoJump(video)}
                     >
                       <img
                         src={video.cover_local ? `/${video.cover_local}` : video.cover_url}
                         alt={video.title}
-                        className="w-12 h-8 object-cover rounded"
+                        className="w-12 h-8 object-cover rounded transition-transform duration-300 hover:scale-110"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-300 line-clamp-1">{video.title}</p>
+                        <p className="text-xs text-gray-300 line-clamp-1 hover:text-red-400 transition-colors duration-200">{video.title}</p>
                       </div>
                     </div>
                   ))}
@@ -332,45 +427,38 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="搜索故事..."
-                  className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-purple-500 focus:outline-none transition-all duration-300"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </form>
             </div>
-            
-            <Link
-              href="/videos"
-              className="mt-4 block text-center text-sm text-gray-400 hover:text-red-400 transition-colors"
-            >
-              📺 查看全部视频 →
-            </Link>
           </div>
         )}
       </div>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
-        <header className="mb-12 text-center">
-          <div className="relative inline-block">
+        <header className="mb-12 text-center animate-fade-in">
+          <div className="relative inline-block animate-float">
             <h1 className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-red-500 to-orange-600 tracking-wider drop-shadow-2xl">
               怖客
             </h1>
             <div className="absolute -top-4 -right-4 text-4xl animate-pulse">👻</div>
-            <div className="absolute -bottom-2 -left-4 text-3xl opacity-50">💀</div>
+            <div className="absolute -bottom-2 -left-4 text-3xl opacity-50 animate-float" style={{ animationDelay: '0.5s' }}>💀</div>
           </div>
-          <p className="mt-4 text-gray-500 text-sm tracking-widest">
+          <p className="mt-4 text-gray-500 text-sm tracking-widest animate-fade-in" style={{ animationDelay: '0.3s' }}>
             ⚜ 恐怖灵异内容聚合平台 ⚜
           </p>
-          <div className="mt-6 flex justify-center gap-8 text-gray-600 text-xs">
-            <span className="flex items-center gap-1"><span className="text-red-500">●</span> 灵异故事</span>
-            <span className="flex items-center gap-1"><span className="text-purple-500">●</span> 都市传说</span>
-            <span className="flex items-center gap-1"><span className="text-blue-500">●</span> 民间怪谈</span>
+          <div className="mt-6 flex justify-center gap-8 text-gray-600 text-xs animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <span className="flex items-center gap-1 hover:text-red-400 transition-colors duration-300"><span className="text-red-500">●</span> 灵异故事</span>
+            <span className="flex items-center gap-1 hover:text-purple-400 transition-colors duration-300"><span className="text-purple-500">●</span> 都市传说</span>
+            <span className="flex items-center gap-1 hover:text-blue-400 transition-colors duration-300"><span className="text-blue-500">●</span> 民间怪谈</span>
           </div>
         </header>
 
-        <section className="mb-16">
+        <section className="mb-16 animate-fade-in" style={{ animationDelay: '0.8s' }}>
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-3xl">👑</span>
+            <span className="text-3xl animate-float">👑</span>
             <div>
               <h2 className="text-2xl font-bold text-red-400">至臻系列</h2>
               <p className="text-sm text-gray-500">精选故事串联 · 沉浸式体验</p>
@@ -461,9 +549,9 @@ export default function Home() {
           )}
         </section>
 
-        <section className="mb-16">
+        <section className="mb-16 animate-fade-in" style={{ animationDelay: '1s' }}>
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-3xl">�</span>
+            <span className="text-3xl animate-float">🔥</span>
             <div>
               <h2 className="text-2xl font-bold text-orange-400">大家都在看 TOP 10</h2>
               <p className="text-sm text-gray-500">播放量最高 · 求助评论精选</p>
@@ -497,6 +585,16 @@ export default function Home() {
                       <div className="absolute -top-2 -left-2 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
                         {video.rank}
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedVideo(expandedVideo === video.rank ? null : video.rank);
+                        }}
+                        className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-r from-purple-600 to-red-600 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all"
+                        title="查看AI总结"
+                      >
+                        AI
+                      </button>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-200 line-clamp-1 mb-1 group-hover:text-red-400">
@@ -527,17 +625,29 @@ export default function Home() {
                   
                   {expandedVideo === video.rank && (
                     <div className="border-t border-gray-800 p-4 bg-black/40">
-                      <div className="max-h-64 overflow-y-auto space-y-2">
-                        {video.comments.slice(0, 5).map((comment) => (
-                          <div key={comment.id} className="bg-gray-900/50 rounded p-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-red-400 font-medium">{comment.author}</span>
+                      <AISummaryBox 
+                        bvid={video.bvid}
+                        title={video.title}
+                        compact={false}
+                        className="mb-4"
+                      />
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
+                          <span>💬</span>
+                          求助评论精选
+                        </h4>
+                        <div className="max-h-64 overflow-y-auto space-y-2">
+                          {video.comments.slice(0, 5).map((comment) => (
+                            <div key={comment.id} className="bg-gray-900/50 rounded p-3">
+                              <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-red-400 font-medium">{comment.author.length > 2 ? comment.author[0] + '*'.repeat(comment.author.length - 1) : comment.author}</span>
                               <span className="text-xs text-gray-600">{formatCommentTime(comment.time)}</span>
                               <span className="text-xs bg-red-900/30 text-red-400 px-1.5 rounded">{comment.keyword}</span>
                             </div>
-                            <p className="text-sm text-gray-400 line-clamp-2">{comment.content}</p>
-                          </div>
-                        ))}
+                              <p className="text-sm text-gray-400 line-clamp-2">{comment.content}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -548,15 +658,16 @@ export default function Home() {
         </section>
 
         {theme && (
-          <section className="mb-12">
-            <div className="bg-gradient-to-r from-purple-900/30 to-black/30 rounded-lg p-6 border border-purple-800/30">
+          <section className="mb-12 animate-fade-in" style={{ animationDelay: '1.2s' }}>
+            <div className="bg-gradient-to-r from-purple-900/30 to-black/30 rounded-lg p-6 border border-purple-800/30 hover:border-purple-700/50 transition-all duration-300 shadow-lg shadow-purple-900/20">
               <h3 className="text-lg font-bold text-purple-400 mb-2 flex items-center gap-2">
-                <span>📌</span> 本期主题
+                <span className="animate-float">📌</span>
+                本期主题
               </h3>
               <p className="text-gray-300 mb-3">{theme}</p>
               <div className="flex flex-wrap gap-2">
                 {keywords.map((kw, i) => (
-                  <span key={i} className="text-xs bg-purple-900/40 text-purple-300 px-3 py-1 rounded-full border border-purple-700/30">
+                  <span key={i} className="text-xs bg-purple-900/40 text-purple-300 px-3 py-1 rounded-full border border-purple-700/30 hover:bg-purple-800/60 hover:border-purple-600/50 transition-all duration-200">
                     #{kw}
                   </span>
                 ))}
@@ -566,31 +677,57 @@ export default function Home() {
         )}
 
         {episodeRank.length > 0 && (
-          <section className="mb-16">
+          <section className="mb-16 animate-fade-in" style={{ animationDelay: '1.4s' }}>
             <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">📊</span>
+              <span className="text-3xl animate-float">📊</span>
               <h2 className="text-2xl font-bold text-blue-400">提及排行榜</h2>
             </div>
-            <div className="bg-gray-900/40 rounded-lg border border-gray-800 overflow-hidden">
+            <div className="bg-gray-900/40 rounded-lg border border-gray-800 overflow-hidden hover:border-blue-800/50 transition-all duration-300 shadow-lg shadow-blue-900/10">
               <div className="divide-y divide-gray-800">
-                {episodeRank.slice(0, 5).map((item) => (
+                {episodeRank.slice(0, 5).map((item, index) => (
                   <div
                     key={item.rank}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-800/30 transition-colors"
+                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-800/30 transition-colors duration-200 animate-fade-in"
+                    style={{ animationDelay: `${1.5 + index * 0.1}s` }}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue-900/50 flex items-center justify-center text-xs font-bold text-blue-400">
+                      <span className="w-6 h-6 rounded-full bg-blue-900/50 flex items-center justify-center text-xs font-bold text-blue-400 hover:bg-blue-800/70 transition-colors duration-200">
                         {item.rank}
                       </span>
-                      <span className="text-gray-300">{item.name}</span>
+                      <span className="text-gray-300 hover:text-blue-400 transition-colors duration-200">{item.name}</span>
                     </div>
-                    <span className="text-xs text-gray-500">{item.mention_count}次提及</span>
+                    <span className="text-xs text-gray-500 hover:text-blue-400 transition-colors duration-200">{item.mention_count}次提及</span>
                   </div>
                 ))}
               </div>
             </div>
           </section>
         )}
+
+        {/* 版本2新增：访客统计和AI推荐 */}
+        <section className="mb-16 animate-fade-in" style={{ animationDelay: '1.6s' }}>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="animate-fade-in" style={{ animationDelay: '1.7s' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl animate-float">📈</span>
+                <h2 className="text-2xl font-bold text-green-400">访客统计</h2>
+              </div>
+              <VisitorStatsPanel showDetails={true} />
+            </div>
+            
+            <div className="animate-fade-in" style={{ animationDelay: '1.8s' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl animate-float">🎯</span>
+                <h2 className="text-2xl font-bold text-purple-400">猜你喜欢</h2>
+              </div>
+              <AIRecommendations 
+                allContent={top10Videos} 
+                contentType="video"
+                title="AI智能推荐"
+              />
+            </div>
+          </div>
+        </section>
 
         <footer className="mt-20 pt-8 border-t border-gray-800">
           <div className="text-center mb-8">

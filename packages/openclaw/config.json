@@ -1,0 +1,17 @@
+{
+  "model": {
+    "provider": "openai",
+    "apiKey": "sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3",
+    "baseUrl": "https://openrouter.fans/v1",
+    "model": "deepseek/deepseek-chat"
+  },
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "features": {
+    "webSearch": true,
+    "fileSystem": true,
+    "codeExecution": false
+  }
+}

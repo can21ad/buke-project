@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 interface VideoItem {
   id: number;
   bvid: string;
-  video_url: string;
+  video_url?: string;
   cover_url: string;
   cover_local: string;
   play_count: number;
@@ -19,6 +19,7 @@ interface VideoItem {
   episode: number;
   part: string;
   keywords?: { word: string; weight: number }[];
+  ai_summary?: string;
 }
 
 interface VideoDbResponse {
@@ -26,6 +27,23 @@ interface VideoDbResponse {
   version: string;
   total_videos: number;
   videos: VideoItem[];
+}
+
+interface AISummaryItem {
+  rank: number;
+  bvid: string;
+  title: string;
+  owner: string;
+  duration: number;
+  view_count: number;
+  summary: string;
+  generated_at: string;
+}
+
+interface AISummariesResponse {
+  generated_at: string;
+  total: number;
+  summaries: AISummaryItem[];
 }
 
 const VIDEOS_PER_PAGE = 12;
@@ -42,6 +60,7 @@ const CATEGORY_LABELS: Record<CategoryType, string> = {
 const VideosContent = () => {
   const searchParams = useSearchParams();
   const [allVideos, setAllVideos] = useState<VideoItem[]>([]);
+  const [aiSummaries, setAiSummaries] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +74,7 @@ const VideosContent = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    // 加载视频数据
     fetch('/data/buke_all_episodes.json')
       .then((res) => res.json())
       .then((data: VideoDbResponse) => {
@@ -70,6 +90,25 @@ const VideosContent = () => {
       .catch((err) => {
         console.error('Failed to load videos:', err);
         setIsLoading(false);
+      });
+    
+    // 加载AI总结数据
+    fetch('/data/csv_top10_summaries.json')
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data: AISummariesResponse | null) => {
+        if (data && data.summaries) {
+          const summaryMap = new Map<string, string>();
+          data.summaries.forEach(item => {
+            summaryMap.set(item.bvid, item.summary);
+          });
+          setAiSummaries(summaryMap);
+        }
+      })
+      .catch((err) => {
+        console.log('AI summaries not available:', err);
       });
   }, []);
 
@@ -347,6 +386,38 @@ const VideosContent = () => {
                             {kw.word}
                           </span>
                         ))}
+                      </div>
+                    )}
+                    
+                    {/* AI总结显示 */}
+                    {aiSummaries.has(video.bvid) && (
+                      <div className="mb-3 p-2 bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded border border-purple-700/30">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">AI</span>
+                            <span className="text-xs text-purple-300">故事总结</span>
+                          </div>
+                          <button 
+                            id={`summary-btn-${video.bvid}`}
+                            className="text-xs text-purple-400 hover:text-purple-300"
+                            onClick={() => {
+                              const summaryElement = document.getElementById(`summary-${video.bvid}`);
+                              const buttonElement = document.getElementById(`summary-btn-${video.bvid}`);
+                              if (summaryElement && buttonElement) {
+                                summaryElement.classList.toggle('line-clamp-3');
+                                buttonElement.textContent = summaryElement.classList.contains('line-clamp-3') ? '全部' : '收起';
+                              }
+                            }}
+                          >
+                            全部
+                          </button>
+                        </div>
+                        <p 
+                          id={`summary-${video.bvid}`}
+                          className="text-xs text-gray-300 line-clamp-3"
+                        >
+                          {aiSummaries.get(video.bvid)}
+                        </p>
                       </div>
                     )}
                     

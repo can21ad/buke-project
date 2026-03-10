@@ -27,6 +27,7 @@ app.use('/api/v1', require('./modules/story/story.controller'));
 app.use('/api/v1', require('./modules/video/video.controller'));
 app.use('/api/v1', require('./modules/crawler/crawler.controller'));
 app.use('/api/v1', require('./modules/search/search.controller'));
+app.use('/api/v1', require('./modules/summarizer/summarizer.controller'));
 
 // 404处理
 app.use('*', (req, res) => {

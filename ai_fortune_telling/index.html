@@ -457,11 +457,7 @@
                     <textarea id="question" name="question" placeholder="请输入您想咨询的问题，例如：事业、感情、健康等..."></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label for="apiKey">通义千问API-KEY</label>
-                    <input type="password" id="apiKey" name="apiKey" required placeholder="请输入您的通义千问API-KEY">
-                    <p style="font-size: 12px; color: #666; margin-top: 5px;">获取API-KEY：<a href="https://dashscope.console.aliyun.com/" target="_blank" style="color: #667eea;">阿里云通义千问控制台</a></p>
-                </div>
+
                 
                 <button type="submit" class="btn" id="submitBtn">开始算命</button>
             </form>
@@ -513,7 +509,6 @@
             const birthDate = document.getElementById('birthDate').value;
             const birthTime = document.getElementById('birthTime').value;
             const question = document.getElementById('question').value;
-            const apiKey = document.getElementById('apiKey').value;
             
             // 显示加载状态
             const submitBtn = document.getElementById('submitBtn');
@@ -532,11 +527,11 @@
             // 显示加载中
             document.getElementById('fortuneText').innerHTML = '<div style="text-align: center; padding: 40px;"><div style="font-size: 48px; margin-bottom: 20px;">🔮</div><p>AI正在分析您的信息...</p><p style="margin-top: 10px; font-size: 14px; color: #666;">请稍候，这可能需要几秒钟时间</p></div>';
             
-            // 调用通义千问API
-            callTongyiAPI(name, gender, birthDate, birthTime, question, apiKey);
+            // 调用API
+            callTongyiAPI(name, gender, birthDate, birthTime, question);
         });
         
-        async function callTongyiAPI(name, gender, birthDate, birthTime, question, apiKey) {
+        async function callTongyiAPI(name, gender, birthDate, birthTime, question) {
             try {
                 // 构建请求参数
                 const requestData = {
@@ -553,14 +548,14 @@
                 // 调用通义千问API
                 let response;
                 try {
-                    response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
+                    response = await fetch('https://openrouter.fans/v1/chat/completions', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
+                            'Authorization': `Bearer sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3`
                         },
                         body: JSON.stringify({
-                            model: "qwen-turbo",
+                            model: "deepseek/deepseek-chat",
                             messages: [
                                 {
                                     role: "system",
@@ -583,21 +578,25 @@
                     console.error('API调用失败:', error);
                     // 尝试使用另一种API格式
                     try {
-                        response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+                        response = await fetch('https://openrouter.fans/v1/chat/completions', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`
+                                'Authorization': `Bearer sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3`
                             },
                             body: JSON.stringify({
-                                model: "qwen-max",
-                                input: {
-                                    prompt: `你是一位专业的命理师，请根据以下信息为${name}(${gender === 'male' ? '男' : '女'})进行算命分析。出生日期：${birthDate}，出生时间：${birthTime}。用户问题：${question}。请提供详细的运势分析，包括事业、感情、健康、财运等方面，并给出专业建议。`
-                                },
-                                parameters: {
-                                    temperature: 0.7,
-                                    top_p: 0.9
-                                }
+                                model: "deepseek/deepseek-chat",
+                                messages: [
+                                    {
+                                        role: "system",
+                                        content: "你是一位专业的命理师，擅长根据用户的生辰八字进行算命分析。"
+                                    },
+                                    {
+                                        role: "user",
+                                        content: `请根据以下信息为${name}(${gender === 'male' ? '男' : '女'})进行算命分析。出生日期：${birthDate}，出生时间：${birthTime}。用户问题：${question}。请提供详细的运势分析，包括事业、感情、健康、财运等方面，并给出专业建议。`
+                                    }
+                                ],
+                                temperature: 0.7
                             })
                         });
                         

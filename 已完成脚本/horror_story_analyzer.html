@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恐怖故事分析与评分</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blood': '#8B0000',
+                        'ghost': '#00FF00',
+                        'dark-bg': '#121212',
+                        'darker-bg': '#0A0A0A',
+                        'light-text': '#E0E0E0'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            .text-glow {
+                text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            }
+            .bg-gradient-horror {
+                background: linear-gradient(135deg, #121212 0%, #0A0A0A 100%);
+            }
+            .star-glow {
+                drop-shadow: 0 0 8px rgba(220, 38, 38, 0.8);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-light-text min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-4xl bg-darker-bg rounded-lg shadow-2xl p-6 md:p-8 border border-blood/30">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-6 text-shadow text-glow">
+            <i class="fa fa-skull-crossbones mr-2 text-blood"></i>恐怖故事分析器
+        </h1>
+        
+        <form id="storyForm" class="mb-8">
+            <div class="mb-4">
+                <label for="story" class="block text-lg font-semibold mb-2">
+                    <i class="fa fa-video-camera mr-2 text-ghost"></i>输入 B 站 BV 号
+                </label>
+                <textarea 
+                    id="story" 
+                    name="story" 
+                    rows="8" 
+                    class="w-full p-4 bg-dark-bg border border-blood/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blood resize-none"
+                    placeholder="请输入 B 站 BV 号，例如：BV1464y1Y71A"
+                    required
+                ></textarea>
+            </div>
+            
+            <button 
+                type="submit" 
+                id="analyzeBtn" 
+                class="w-full py-3 bg-gradient-to-r from-blood to-darker-bg text-white font-bold rounded-lg transition-all hover:shadow-lg hover:shadow-blood/30 focus:outline-none focus:ring-2 focus:ring-blood"
+            >
+                <i class="fa fa-bolt mr-2"></i>分析恐惧
+            </button>
+        </form>
+        
+        <div id="loading" class="flex justify-center items-center py-8 hidden">
+            <div class="text-center">
+                <div class="inline-block animate-pulse-slow">
+                    <i class="fa fa-spinner fa-spin text-4xl text-blood mb-4"></i>
+                </div>
+                <p class="text-lg text-ghost animate-pulse-slow">正在召唤恶灵分析中...</p>
+            </div>
+        </div>
+        
+        <div id="result" class="mt-8 hidden animate-fade-in">
+            <div class="border-t border-blood/30 pt-6">
+                <h2 class="text-2xl font-semibold mb-4 text-shadow">
+                    <i class="fa fa-scissors mr-2 text-blood"></i>分析结果
+                </h2>
+                
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2 text-ghost">故事提要</h3>
+                    <p id="summary" class="bg-dark-bg p-4 rounded-lg border border-ghost/20"></p>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4 text-ghost">综合恐怖指数</h3>
+                    <div id="overallScore" class="flex items-center justify-center mb-6"></div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4 text-ghost">细分维度评分</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-dark-bg p-4 rounded-lg border border-blood/30">
+                            <h4 class="text-sm font-medium mb-2 text-ghost">氛围感</h4>
+                            <div id="atmosphereScore" class="flex items-center mb-2"></div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div id="atmosphereBar" class="h-2 rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="bg-dark-bg p-4 rounded-lg border border-blood/30">
+                            <h4 class="text-sm font-medium mb-2 text-ghost">心理压迫</h4>
+                            <div id="psychologicalScore" class="flex items-center mb-2"></div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div id="psychologicalBar" class="h-2 rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="bg-dark-bg p-4 rounded-lg border border-blood/30">
+                            <h4 class="text-sm font-medium mb-2 text-ghost">视觉冲击</h4>
+                            <div id="goreScore" class="flex items-center mb-2"></div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div id="goreBar" class="h-2 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2 text-ghost">专家短评</h3>
+                    <p id="reason" class="bg-dark-bg p-4 rounded-lg border border-blood/20 italic"></p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="error" class="mt-8 hidden animate-fade-in">
+            <div class="bg-blood/20 border border-blood/50 rounded-lg p-4">
+                <p id="errorMessage" class="text-blood font-medium"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 根据分数获取颜色类
+        function getScoreColor(score) {
+            if (score >= 4) {
+                return 'text-red-600';
+            } else if (score === 3) {
+                return 'text-yellow-500';
+            } else {
+                return 'text-green-500';
+            }
+        }
+        
+        // 渲染星星
+        function renderStars(score, elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            const colorClass = getScoreColor(score);
+            const glowClass = score >= 4 ? 'star-glow' : '';
+            
+            for (let i = 0; i < 5; i++) {
+                if (i < score) {
+                    element.innerHTML += `<span class="${colorClass} ${glowClass} text-2xl mr-1">★</span>`;
+                } else {
+                    element.innerHTML += '<span class="text-gray-600 text-2xl mr-1">☆</span>';
+                }
+            }
+        }
+        
+        // 渲染进度条
+        function renderProgressBar(score, elementId) {
+            const element = document.getElementById(elementId);
+            const percentage = (score / 5) * 100;
+            const colorClass = getScoreColor(score);
+            element.style.width = `${percentage}%`;
+            element.className = `h-2 rounded-full ${colorClass}`;
+        }
+        
+        // 调用本地后端：根据 BV 号获取「完整总结 + 恐怖度打分」
+        async function getAnalysisFromBV(bv) {
+            const resp = await fetch('http://127.0.0.1:8000/api/v1/analyze-from-bv/' + encodeURIComponent(bv));
+            if (!resp.ok) {
+                throw new Error(`后端接口错误：${resp.status}`);
+            }
+            const data = await resp.json();
+            if (data.code !== 200) {
+                throw new Error(data.detail || data.message || '分析失败');
+            }
+            return data.data;
+        }
+
+        document.getElementById('storyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const bv = document.getElementById('story').value.trim();
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // 检查 BV 是否为空
+            if (!bv) {
+                errorMessage.textContent = '请输入 B 站 BV 号！';
+                error.classList.remove('hidden');
+                result.classList.add('hidden');
+                return;
+            }
+            
+            // 隐藏错误信息
+            error.classList.add('hidden');
+            
+            // 显示加载状态
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在召唤恶灵分析中...';
+            loading.classList.remove('hidden');
+            result.classList.add('hidden');
+            
+            // 调用后端，先总结再打分
+            getAnalysisFromBV(bv).then(data => {
+                // 隐藏加载状态
+                loading.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fa fa-bolt mr-2"></i>分析恐惧';
+                
+                // 显示结果
+                result.classList.remove('hidden');
+                
+                // 显示完整总结内容：优先用 raw_summary，没有就用 summary
+                const fullSummary = data.raw_summary || data.summary || '';
+                document.getElementById('summary').textContent = fullSummary;
+                
+                // 显示综合恐怖指数
+                const overallScore = data.scores.overall;
+                const overallScoreDisplay = document.getElementById('overallScore');
+                const overallColorClass = getScoreColor(overallScore);
+                const overallGlowClass = overallScore >= 4 ? 'star-glow' : '';
+                
+                overallScoreDisplay.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    if (i < overallScore) {
+                        overallScoreDisplay.innerHTML += `<span class="${overallColorClass} ${overallGlowClass} text-4xl mr-2">★</span>`;
+                    } else {
+                        overallScoreDisplay.innerHTML += '<span class="text-gray-600 text-4xl mr-2">☆</span>';
+                    }
+                }
+                overallScoreDisplay.innerHTML += `<span class="ml-2 text-2xl font-bold ${overallColorClass}">${overallScore}/5</span>`;
+                
+                // 显示细分维度评分
+                renderStars(data.scores.atmosphere, 'atmosphereScore');
+                renderProgressBar(data.scores.atmosphere, 'atmosphereBar');
+                
+                renderStars(data.scores.psychological, 'psychologicalScore');
+                renderProgressBar(data.scores.psychological, 'psychologicalBar');
+                
+                renderStars(data.scores.gore, 'goreScore');
+                renderProgressBar(data.scores.gore, 'goreBar');
+                
+                // 显示专家短评
+                document.getElementById('reason').textContent = data.reason;
+                
+            }).catch(error => {
+                // 隐藏加载状态
+                loading.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fa fa-bolt mr-2"></i>分析恐惧';
+                
+                // 显示错误信息
+                errorMessage.textContent = '分析失败，请稍后重试：' + error.message;
+                error.classList.remove('hidden');
+                result.classList.add('hidden');
+            });
+        });
+        
+        // 调用本地后端，对故事做恐怖度打分
+        function getMockData(story) {
+            // 生成模拟数据
+            const atmosphere = Math.floor(Math.random() * 5) + 1;
+            const psychological = Math.floor(Math.random() * 5) + 1;
+            const gore = Math.floor(Math.random() * 5) + 1;
+            const overall = Math.round((atmosphere + psychological + gore) / 3);
+            const reasons = [
+                '故事氛围营造到位，情节紧凑，恐怖元素适中。',
+                '恐怖元素丰富，情节扣人心弦，让人毛骨悚然。',
+                '故事结构完整，恐怖氛围浓郁，结局出乎意料。',
+                '恐怖指数较高，情节设计巧妙，让人胆战心惊。',
+                '极致恐怖，情节跌宕起伏，让人不寒而栗。'
+            ];
+            
+            return {
+                summary: `这是一个关于${story.substring(0, 50)}...的恐怖故事，包含了紧张的情节和恐怖的元素。`,
+                scores: {
+                    atmosphere: atmosphere,
+                    psychological: psychological,
+                    gore: gore,
+                    overall: overall
+                },
+                reason: reasons[overall - 1]
+            };
+        }
+    </script>
+</body>
+</html>

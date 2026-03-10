@@ -1,0 +1,14 @@
+{
+  "name": "buke-openclaw",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenClaw AI智能体平台，集成通义千问模型",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "openclaw": "^2026.3.2",
+    "axios": "^1.6.2"
+  }
+}
