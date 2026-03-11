@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AISummaryBox from '../components/AISummaryBox';
 import VisitorStatsPanel from '../components/VisitorStatsPanel';
 import AIRecommendations from '../components/AIRecommendations';
+import { analyticsService } from '../services/analyticsService';
 
 // 全局样式
 const GlobalStyles = () => (
@@ -230,6 +231,9 @@ export default function Home() {
   const [showSearchPanel, setShowSearchPanel] = useState(false);
 
   useEffect(() => {
+    // 记录页面浏览事件
+    analyticsService.trackPageView('home');
+    
     fetch('/data/buke_top_stories.json')
       .then(res => res.json())
       .then((data: DataResponse) => {
@@ -338,6 +342,8 @@ export default function Home() {
   };
 
   const handleVideoJump = (video: VideoItem) => {
+    // 记录视频点击事件
+    analyticsService.trackVideoClick(video.bvid);
     const url = video.video_url || `https://www.bilibili.com/video/${video.bvid}`;
     window.open(url, '_blank');
   };
@@ -488,6 +494,8 @@ export default function Home() {
                           <div 
                             className="flex-shrink-0 w-72 bg-black/60 rounded-xl overflow-hidden cursor-pointer group border border-gray-800 hover:border-red-800 transition-all duration-300 hover:shadow-lg hover:shadow-red-900/30"
                             onClick={() => {
+                              // 记录视频点击事件
+                              analyticsService.trackVideoClick(story.bvid);
                               const url = `https://www.bilibili.com/video/${story.bvid}?t=${story.timestamp}`;
                               window.open(url, '_blank');
                             }}
@@ -572,7 +580,11 @@ export default function Home() {
                 <div key={video.bvid} className="bg-gradient-to-r from-gray-900/60 to-black/60 rounded-lg border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors">
                   <div 
                     className="flex items-start gap-4 p-4 cursor-pointer"
-                    onClick={() => toggleVideoExpand(video.rank)}
+                    onClick={() => {
+                      // 记录AI总结查看事件
+                      analyticsService.trackAISummaryView(video.bvid);
+                      toggleVideoExpand(video.rank);
+                    }}
                   >
                     <div className="relative flex-shrink-0">
                       <div className="w-20 h-14 rounded overflow-hidden">
@@ -588,6 +600,8 @@ export default function Home() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          // 记录AI总结查看事件
+                          analyticsService.trackAISummaryView(video.bvid);
                           setExpandedVideo(expandedVideo === video.rank ? null : video.rank);
                         }}
                         className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-r from-purple-600 to-red-600 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all"
@@ -613,6 +627,8 @@ export default function Home() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        // 记录视频点击事件
+                        analyticsService.trackVideoClick(video.bvid);
                         const baseUrl = `https://www.bilibili.com/video/${video.bvid}`;
                         const url = video.timestamp ? `${baseUrl}?t=${video.timestamp}` : baseUrl;
                         window.open(url, '_blank');
@@ -762,6 +778,12 @@ export default function Home() {
             </div>
             <p className="text-gray-700">© 2024 怖客 · 恐怖灵异内容聚合平台</p>
             <p className="text-gray-800 text-xs mt-2">⚠️ 本站内容仅供娱乐，请勿迷信</p>
+            <div className="mt-4 p-4 bg-gray-900/50 border border-gray-800 rounded-lg max-w-2xl mx-auto">
+              <p className="text-red-400 font-bold mb-2">重要声明</p>
+              <p className="text-gray-300 text-sm">本平台为非商业学习交流平台，所有内容仅供交流，不得用于商业用途。</p>
+              <p className="text-gray-300 text-sm mt-2">AI 总结数据来源于 B 站的 CC 弹幕，同样不用于商业。</p>
+              <p className="text-gray-300 text-sm mt-2">若有侵权，请联系我们，我们将立刻删除相关内容。</p>
+            </div>
           </div>
         </footer>
       </div>

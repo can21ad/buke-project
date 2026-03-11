@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { analyticsService } from '../../services/analyticsService';
 
 interface VideoItem {
   id: number;
@@ -74,6 +75,9 @@ const VideosContent = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    // 记录页面浏览事件
+    analyticsService.trackPageView('videos');
+    
     // 加载视频数据
     fetch('/data/buke_all_episodes.json')
       .then((res) => res.json())
@@ -161,6 +165,8 @@ const VideosContent = () => {
   }, [category, searchQuery]);
 
   const handleJump = (item: VideoItem) => {
+    // 记录视频点击事件
+    analyticsService.trackVideoClick(item.bvid);
     const url = item.video_url || `https://www.bilibili.com/video/${item.bvid}`;
     window.open(url, '_blank');
   };
@@ -401,6 +407,8 @@ const VideosContent = () => {
                             id={`summary-btn-${video.bvid}`}
                             className="text-xs text-purple-400 hover:text-purple-300"
                             onClick={() => {
+                              // 记录AI总结查看事件
+                              analyticsService.trackAISummaryView(video.bvid);
                               const summaryElement = document.getElementById(`summary-${video.bvid}`);
                               const buttonElement = document.getElementById(`summary-btn-${video.bvid}`);
                               if (summaryElement && buttonElement) {
@@ -464,6 +472,13 @@ const VideosContent = () => {
               <p>• <strong>道听途说特辑</strong>：标题中包含"特辑"字样的视频</p>
               <p>• <strong>都市传说</strong>：不包含"道听途说"字样的其他视频</p>
             </div>
+          </div>
+          
+          <div className="mt-8 p-4 bg-darker rounded-lg border border-gray-700 max-w-2xl mx-auto">
+            <p className="text-red-400 font-bold mb-2">重要声明</p>
+            <p className="text-gray-300 text-sm">本平台为非商业学习交流平台，所有内容仅供交流，不得用于商业用途。</p>
+            <p className="text-gray-300 text-sm mt-2">AI 总结数据来源于 B 站的 CC 弹幕，同样不用于商业。</p>
+            <p className="text-gray-300 text-sm mt-2">若有侵权，请联系我们，我们将立刻删除相关内容。</p>
           </div>
         </>
       )}
