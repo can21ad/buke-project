@@ -501,8 +501,77 @@
     </div>
     
     <script>
+        // 防盗用配置
+        const API_KEY = 'sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3'; // 实际部署时应从环境变量获取
+        const RATE_LIMIT_WINDOW = 60000; // 1分钟
+        const RATE_LIMIT_MAX = 10; // 每分钟最多10个请求
+        let lastRequestTime = 0;
+        let requestCount = 0;
+        
+        // 表单验证
+        function validateForm() {
+            const name = document.getElementById('name').value.trim();
+            const gender = document.getElementById('gender').value;
+            const birthDate = document.getElementById('birthDate').value;
+            const birthTime = document.getElementById('birthTime').value;
+            
+            if (!name) {
+                alert('请输入姓名');
+                return false;
+            }
+            
+            if (!gender) {
+                alert('请选择性别');
+                return false;
+            }
+            
+            if (!birthDate) {
+                alert('请选择出生日期');
+                return false;
+            }
+            
+            if (!birthTime) {
+                alert('请选择出生时间');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 请求频率限制
+        function checkRateLimit() {
+            const now = Date.now();
+            
+            if (now - lastRequestTime > RATE_LIMIT_WINDOW) {
+                // 重置计数器
+                requestCount = 1;
+                lastRequestTime = now;
+                return true;
+            } else {
+                // 检查是否超过限制
+                if (requestCount >= RATE_LIMIT_MAX) {
+                    alert('请求过于频繁，请1分钟后再试');
+                    return false;
+                } else {
+                    requestCount++;
+                    lastRequestTime = now;
+                    return true;
+                }
+            }
+        }
+        
         document.getElementById('fortuneForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // 表单验证
+            if (!validateForm()) {
+                return;
+            }
+            
+            // 检查请求频率
+            if (!checkRateLimit()) {
+                return;
+            }
             
             const name = document.getElementById('name').value;
             const gender = document.getElementById('gender').value;
@@ -552,10 +621,10 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3`
+                            'Authorization': `Bearer ${API_KEY}`
                         },
                         body: JSON.stringify({
-                            model: "deepseek/deepseek-chat",
+                            model: "deepseek-chat",
                             messages: [
                                 {
                                     role: "system",
@@ -582,10 +651,10 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': `Bearer sk-S6Q7NxPxQUNY7gWP1RRC3cTeRuJ2mjPY42CRS3WShl5KrSE3`
+                                'Authorization': `Bearer ${API_KEY}`
                             },
                             body: JSON.stringify({
-                                model: "deepseek/deepseek-chat",
+                                model: "deepseek-chat",
                                 messages: [
                                     {
                                         role: "system",
