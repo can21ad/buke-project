@@ -102,6 +102,7 @@ app.use('/api/v1', require('./modules/video/video.controller'));
 app.use('/api/v1', require('./modules/crawler/crawler.controller'));
 app.use('/api/v1', require('./modules/search/search.controller'));
 app.use('/api/v1', require('./modules/summarizer/summarizer.controller'));
+app.use('/api/v1', require('./modules/recommendation/recommendation.controller'));
 
 // 404处理
 app.use('*', (req, res) => {

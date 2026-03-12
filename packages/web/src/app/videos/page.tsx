@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { analyticsService } from '../../services/analyticsService';
+import { similarVideoService, SearchFilters, SimilarVideo } from '../../services/similarVideoService';
 
 interface VideoItem {
   id: number;
@@ -65,14 +66,27 @@ const VideosContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingSearchQuery, setPendingSearchQuery] = useState(''); // 普通搜索的待提交关键词
   const [category, setCategory] = useState<CategoryType>('all');
+  
+  // AI语义搜索状态
+  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const [aiSearchResults, setAiSearchResults] = useState<SimilarVideo[]>([]);
+  const [aiSearchLoading, setAiSearchLoading] = useState(false);
+  const [aiFilters, setAiFilters] = useState<SearchFilters>({});
+  const [searchMode, setSearchMode] = useState<'normal' | 'ai'>('normal');
 
   useEffect(() => {
     const urlSearch = searchParams.get('search') || '';
     if (urlSearch) {
       setSearchQuery(urlSearch);
+      // 如果URL有search参数，设置为AI搜索模式
+      setAiSearchQuery(urlSearch);
+      setSearchMode('ai');
     }
   }, [searchParams]);
+  
+  // AI搜索改为点击触发，移除自动搜索
 
   useEffect(() => {
     // 记录页面浏览事件
@@ -129,6 +143,40 @@ const VideosContent = () => {
   };
 
   const filteredVideos = useMemo(() => {
+    console.log('[AI搜索] filteredVideos计算:', { searchMode, resultsCount: aiSearchResults.length, hasQuery: !!aiSearchQuery.trim() });
+    
+    // 如果是AI搜索模式且有搜索词，返回AI搜索结果
+    if (searchMode === 'ai' && aiSearchQuery.trim()) {
+      if (aiSearchResults.length === 0) {
+        console.log('[AI搜索] 无搜索结果');
+        return [];
+      }
+      
+      console.log('[AI搜索] 映射结果到VideoItem格式');
+      return aiSearchResults.map((aiVideo, index) => {
+        const mapped = {
+          id: index + 1,
+          bvid: aiVideo.bvid,
+          title: aiVideo.title,
+          cover_url: aiVideo.cover_url,
+          cover_local: aiVideo.cover_local || '',
+          video_url: aiVideo.video_url,
+          duration: 0,
+          duration_str: aiVideo.duration_str || aiVideo.duration || '',
+          views: aiVideo.play_count || aiVideo.views || 0,
+          play_count: aiVideo.play_count || aiVideo.views || 0,
+          comment_count: aiVideo.comment_count || 0,
+          episode: aiVideo.episode || 0,
+          part: aiVideo.part || '',
+          keywords: [],
+          upload_date: aiVideo.upload_date || aiVideo.date || '',
+          ai_summary: aiVideo.summary || ''
+        };
+        console.log(`[AI搜索] 映射第${index + 1}条:`, { bvid: mapped.bvid, title: mapped.title?.substring(0, 20) });
+        return mapped;
+      }) as VideoItem[];
+    }
+    
     let result = allVideos;
 
     if (category === 'regular') {
@@ -139,17 +187,17 @@ const VideosContent = () => {
       result = allVideos.filter(isUrbanLegend);
     }
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    if (pendingSearchQuery.trim()) {
+      const query = pendingSearchQuery.toLowerCase().trim();
       result = result.filter(v => 
-        v.title.toLowerCase().includes(query) ||
-        v.bvid.toLowerCase().includes(query) ||
+        (v.title && v.title.toLowerCase().includes(query)) ||
+        (v.bvid && v.bvid.toLowerCase().includes(query)) ||
         (v.episode && v.episode.toString().includes(query))
       );
     }
 
     return result;
-  }, [allVideos, category, searchQuery]);
+  }, [allVideos, category, pendingSearchQuery, searchMode, aiSearchResults]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE);
@@ -162,7 +210,7 @@ const VideosContent = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [category, searchQuery]);
+  }, [category, searchQuery, searchMode, pendingSearchQuery]);
 
   const handleJump = (item: VideoItem) => {
     // 记录视频点击事件
@@ -171,7 +219,8 @@ const VideosContent = () => {
     window.open(url, '_blank');
   };
 
-  const formatPlayCount = (count: number) => {
+  const formatPlayCount = (count: number | undefined) => {
+    if (!count || typeof count !== 'number') return '0';
     if (count >= 10000) {
       return `${(count / 10000).toFixed(1)}万`;
     }
@@ -185,8 +234,47 @@ const VideosContent = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setPendingSearchQuery(searchQuery);
   };
-
+  
+  // AI语义搜索 - 手动触发
+  const handleAISearch = useCallback(async () => {
+    console.log('[AI搜索] 手动触发搜索:', aiSearchQuery.trim());
+    
+    if (!aiSearchQuery.trim()) {
+      console.log('[AI搜索] 搜索词为空，跳过');
+      return;
+    }
+    
+    // 确保在AI模式
+    if (searchMode !== 'ai') {
+      console.log('[AI搜索] 切换到AI模式');
+      setSearchMode('ai');
+    }
+    
+    setAiSearchLoading(true);
+    try {
+      console.log('[AI搜索] 调用API:', { keyword: aiSearchQuery.trim(), filters: aiFilters });
+      const results = await similarVideoService.semanticSearch(aiSearchQuery.trim(), 20, aiFilters);
+      console.log('[AI搜索] API返回结果数:', results.length);
+      setAiSearchResults(results);
+    } catch (error) {
+      console.error('[AI搜索] 搜索失败:', error);
+      setAiSearchResults([]);
+      alert('AI搜索失败，请检查网络连接或稍后重试');
+    } finally {
+      setAiSearchLoading(false);
+    }
+  }, [aiSearchQuery, aiFilters, searchMode]);
+  
+  // 切换到普通搜索
+  const handleNormalSearch = () => {
+    setSearchMode('normal');
+    setAiSearchQuery('');
+    setAiSearchResults([]);
+    setPendingSearchQuery('');
+  };
+  
   const renderPagination = () => {
     if (totalPages <= 1) return null;
 
@@ -276,9 +364,15 @@ const VideosContent = () => {
       <header className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">全部视频</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              {searchMode === 'ai' && aiSearchQuery.trim() ? 'AI语义搜索' : '全部视频'}
+            </h1>
             <p className="text-sm text-gray-400">
-              共 {allVideos.length} 个视频，当前分类 {filteredVideos.length} 个
+              {searchMode === 'ai' && aiSearchQuery.trim() ? (
+                aiSearchLoading ? '搜索中...' : `找到 ${filteredVideos.length} 个相关视频`
+              ) : (
+                `共 ${allVideos.length} 个视频，当前分类 ${filteredVideos.length} 个`
+              )}
             </p>
           </div>
           <Link href="/" className="btn btn-secondary text-sm">
@@ -287,27 +381,142 @@ const VideosContent = () => {
         </div>
 
         <form onSubmit={handleSearch} className="mb-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="搜索视频标题、BV号或期数..."
-              className="input flex-1"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit" className="btn btn-primary">
-              搜索
+          {/* 搜索模式切换 */}
+          <div className="flex gap-2 mb-2">
+            <button
+              type="button"
+              onClick={handleNormalSearch}
+              className={`px-3 py-1 rounded text-sm ${searchMode === 'normal' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+            >
+              普通搜索
             </button>
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="btn btn-secondary"
-              >
-                清除
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                console.log('[AI搜索] 点击切换AI模式按钮');
+                setSearchMode('ai');
+              }}
+              className={`px-3 py-1 rounded text-sm ${searchMode === 'ai' ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+            >
+              AI语义搜索
+            </button>
           </div>
+          
+          {searchMode === 'normal' ? (
+            /* 普通搜索框 */
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="搜索视频标题、BV号或期数..."
+                className="input flex-1"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button type="submit" className="btn btn-primary">
+                搜索
+              </button>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); setPendingSearchQuery(''); }}
+                  className="btn btn-secondary"
+                >
+                  清除
+                </button>
+              )}
+            </div>
+          ) : (
+            /* AI语义搜索框 + 高级过滤 */
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="输入关键词搜索，如：校园灵异、民间怪谈..."
+                  className="input flex-1"
+                  value={aiSearchQuery}
+                  onChange={(e) => {
+                    console.log('[AI搜索] 输入变化:', e.target.value);
+                    setAiSearchQuery(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    console.log('[AI搜索] 按键:', e.key);
+                    if (e.key === 'Enter') {
+                      console.log('[AI搜索] 回车触发搜索');
+                      handleAISearch();
+                    }
+                  }}
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAISearch}
+                  disabled={aiSearchLoading || !aiSearchQuery.trim()}
+                  className="btn btn-primary bg-purple-600 hover:bg-purple-700"
+                >
+                  {aiSearchLoading ? '搜索中...' : 'AI搜索'}
+                </button>
+              </div>
+              
+              {/* 高级过滤选项 */}
+              <div className="flex flex-wrap gap-2 text-sm">
+                <select
+                  value={aiFilters.sort_by || ''}
+                  onChange={(e) => {
+                    setAiFilters({...aiFilters, sort_by: e.target.value as any || undefined});
+                    setCurrentPage(1);
+                  }}
+                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-300"
+                >
+                  <option value="">智能排序</option>
+                  <option value="views">浏览量最高</option>
+                  <option value="stat2">评论最多</option>
+                  <option value="date">最新更新</option>
+                </select>
+                
+                <select
+                  value={aiFilters.min_views || ''}
+                  onChange={(e) => {
+                    setAiFilters({...aiFilters, min_views: e.target.value ? Number(e.target.value) : undefined});
+                    setCurrentPage(1);
+                  }}
+                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-300"
+                >
+                  <option value="">不限浏览量</option>
+                  <option value="10000">1万+</option>
+                  <option value="50000">5万+</option>
+                  <option value="100000">10万+</option>
+                  <option value="500000">50万+</option>
+                </select>
+                
+                <select
+                  value={aiFilters.min_comments || ''}
+                  onChange={(e) => {
+                    setAiFilters({...aiFilters, min_comments: e.target.value ? Number(e.target.value) : undefined});
+                    setCurrentPage(1);
+                  }}
+                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-300"
+                >
+                  <option value="">不限评论</option>
+                  <option value="100">100+</option>
+                  <option value="500">500+</option>
+                  <option value="1000">1000+</option>
+                </select>
+                
+                <select
+                  value={aiFilters.max_duration || ''}
+                  onChange={(e) => {
+                    setAiFilters({...aiFilters, max_duration: e.target.value ? Number(e.target.value) : undefined});
+                    setCurrentPage(1);
+                  }}
+                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-300"
+                >
+                  <option value="">不限时长</option>
+                  <option value="10">10分钟内</option>
+                  <option value="30">30分钟内</option>
+                  <option value="60">1小时内</option>
+                </select>
+              </div>
+            </div>
+          )}
         </form>
 
         <div className="flex flex-wrap gap-2">
@@ -357,7 +566,7 @@ const VideosContent = () => {
                   <div key={video.bvid} className="card flex flex-col">
                     <div className="relative h-40 mb-4 rounded overflow-hidden bg-darker">
                       <img
-                        src={video.cover_local ? `/${video.cover_local}` : video.cover_url}
+                        src={video.cover_local ? video.cover_local : video.cover_url}
                         alt={video.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {

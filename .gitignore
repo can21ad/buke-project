@@ -51,3 +51,9 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Large model files
+model_cache/
+chroma_db/
+*.safetensors
+*.bin

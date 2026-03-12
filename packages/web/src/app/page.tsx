@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AISummaryBox from '../components/AISummaryBox';
@@ -380,69 +380,15 @@ export default function Home() {
           📺 全部视频
         </Link>
         
-        {/* 搜索按钮 */}
+        {/* 搜索按钮 - 跳转到AI搜索页面 */}
         <button
-          onClick={() => setShowSearchPanel(!showSearchPanel)}
+          onClick={() => router.push('/ai-search')}
           className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50"
         >
           <span className="text-xl">🔍</span>
         </button>
-        
-        {showSearchPanel && (
-          <div className="absolute top-16 right-0 w-80 bg-gray-900/95 border border-gray-700 rounded-lg p-4 shadow-2xl shadow-black/50 animate-fade-in">
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-red-500 mb-2 flex items-center gap-2">
-                <span>🎬</span> 视频搜索
-              </h3>
-              <form onSubmit={handleVideoSearch} className="relative">
-                <input
-                  type="text"
-                  placeholder="搜索视频..."
-                  className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-red-500 focus:outline-none transition-all duration-300"
-                  value={videoSearchQuery}
-                  onChange={(e) => handleVideoSearchChange(e.target.value)}
-                />
-              </form>
-              {showVideoResults && videoSearchResults.length > 0 && (
-                <div className="mt-2 max-h-48 overflow-y-auto bg-black/50 rounded border border-gray-800 animate-slide-in">
-                  {videoSearchResults.map((video) => (
-                    <div
-                      key={video.bvid}
-                      className="flex items-center gap-2 p-2 hover:bg-gray-800/50 cursor-pointer border-b border-gray-800 last:border-b-0 transition-colors duration-200"
-                      onClick={() => handleVideoJump(video)}
-                    >
-                      <img
-                        src={video.cover_local ? `/${video.cover_local}` : video.cover_url}
-                        alt={video.title}
-                        className="w-12 h-8 object-cover rounded transition-transform duration-300 hover:scale-110"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-300 line-clamp-1 hover:text-red-400 transition-colors duration-200">{video.title}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-bold text-purple-500 mb-2 flex items-center gap-2">
-                <span>📜</span> 故事搜索
-              </h3>
-              <form onSubmit={handleStorySearch}>
-                <input
-                  type="text"
-                  placeholder="搜索故事..."
-                  className="w-full bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-purple-500 focus:outline-none transition-all duration-300"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </form>
-            </div>
-          </div>
-        )}
       </div>
-
+      
       <div className="container mx-auto px-4 py-8 relative z-10">
         <header className="mb-12 text-center animate-fade-in">
           <div className="relative inline-block animate-float">
@@ -736,10 +682,23 @@ export default function Home() {
                 <span className="text-3xl animate-float">🎯</span>
                 <h2 className="text-2xl font-bold text-purple-400">猜你喜欢</h2>
               </div>
+              
+              {/* 简洁搜索框 - 跳转到AI搜索页面 */}
+              <div 
+                className="bg-gradient-to-br from-gray-900/60 to-black/60 border border-gray-700 rounded-lg p-4 mb-4 cursor-pointer hover:border-purple-500 transition-colors"
+                onClick={() => router.push('/ai-search')}
+              >
+                <div className="flex items-center gap-3 text-gray-400">
+                  <span className="text-xl">🔍</span>
+                  <span className="flex-1">搜索视频...</span>
+                  <span className="text-sm bg-purple-900/30 text-purple-400 px-2 py-1 rounded">AI智能</span>
+                </div>
+              </div>
+              
+              {/* 默认推荐 */}
               <AIRecommendations 
-                allContent={top10Videos} 
-                contentType="video"
-                title="AI智能推荐"
+                currentBvid="BV1W8h9znETX"
+                title="猜你喜欢"
               />
             </div>
           </div>

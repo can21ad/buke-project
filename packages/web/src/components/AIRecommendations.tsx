@@ -1,97 +1,76 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { aiRecommendationService, Recommendation } from '../services/aiRecommendationService';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { similarVideoService, SimilarVideo } from '../services/similarVideoService';
 
 interface AIRecommendationsProps {
-  currentContent?: any;
-  allContent?: any[];
-  contentType?: 'story' | 'video' | 'series';
+  currentBvid?: string;
   className?: string;
   title?: string;
 }
 
 const AIRecommendations: React.FC<AIRecommendationsProps> = ({
-  currentContent,
-  allContent = [],
-  contentType = 'video',
+  currentBvid,
   className = '',
   title = '猜你喜欢'
 }) => {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [allVideos, setAllVideos] = useState<SimilarVideo[]>([]);
+  const [displayVideos, setDisplayVideos] = useState<SimilarVideo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    generateRandomRecommendations();
-  }, [allContent, contentType]);
+  const fetchSimilarVideos = useCallback(async () => {
+    if (!currentBvid) {
+      setError('缺少视频ID');
+      setLoading(false);
+      return;
+    }
 
-  const generateRandomRecommendations = () => {
     setLoading(true);
-    
+    setError(null);
+
     try {
-      // 随机推荐视频
-      const shuffled = [...allContent].sort(() => 0.5 - Math.random());
-      const randomRecs = shuffled.slice(0, 5).map((item, index) => ({
-        id: item.id || item.bvid || String(index),
-        type: contentType,
-        title: item.title || item.name || '推荐内容',
-        description: extractDiverseDescription(item),
-        reason: getDiverseReason(index),
-        score: 0.7 - (index * 0.05),
-        metadata: {
-          bvid: item.bvid,
-          episode: item.episode,
-          cover: item.cover_url || item.cover_local,
-          tags: item.tags
-        }
-      }));
-      setRecommendations(randomRecs);
-    } catch (error) {
-      console.error('生成推荐失败:', error);
+      // 获取更多视频，以便换一换
+      const videos = await similarVideoService.getSimilarVideos(currentBvid, 10);
+      setAllVideos(videos);
+      
+      // 显示前5个
+      setDisplayVideos(videos.slice(0, 5));
+      setPage(0);
+    } catch (err) {
+      console.error('获取相似视频失败:', err);
+      setError('加载失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentBvid]);
+
+  useEffect(() => {
+    fetchSimilarVideos();
+  }, [fetchSimilarVideos]);
 
   const handleRefresh = () => {
-    generateRandomRecommendations();
-  };
-
-  const handleRecommendationClick = (rec: Recommendation) => {
-    // 记录用户点击行为
-    aiRecommendationService.recordUserAction('view', rec.id, rec.metadata.tags);
-    
-    // 跳转链接
-    if (rec.metadata.bvid) {
-      const url = `https://www.bilibili.com/video/${rec.metadata.bvid}`;
-      window.open(url, '_blank');
+    if (allVideos.length <= 5) {
+      // 如果视频不足5个，重新获取
+      fetchSimilarVideos();
+      return;
     }
-  };
-
-  // 提取多样化的描述
-  const extractDiverseDescription = (item: any): string => {
-    const episode = item.episode > 0 ? `第${item.episode}期` : '特别篇';
-    const commentCount = item.comment_count || 0;
     
-    if (commentCount > 20) {
-      return `${episode} · ${commentCount}条讨论 · 社区热门`;
-    } else if (item.play_count > 1000000) {
-      return `${episode} · 播放量${(item.play_count / 10000).toFixed(0)}万 · 人气视频`;
-    } else {
-      return `${episode} · 精彩内容推荐`;
-    }
+    // 换一批显示
+    const nextPage = (page + 1) % Math.ceil(allVideos.length / 5);
+    const start = nextPage * 5;
+    const end = start + 5;
+    setDisplayVideos(allVideos.slice(start, end));
+    setPage(nextPage);
   };
 
-  // 获取多样化的推荐理由
-  const getDiverseReason = (index: number): string => {
-    const reasons = [
-      '你可能感兴趣',
-      '相关推荐',
-      '延伸观看',
-      '相似主题',
-      '观众也在看'
-    ];
-    return reasons[index % reasons.length];
+  const handleVideoClick = (video: SimilarVideo) => {
+    if (video.video_url) {
+      window.open(video.video_url, '_blank');
+    } else if (video.bvid) {
+      window.open(`https://www.bilibili.com/video/${video.bvid}`, '_blank');
+    }
   };
 
   if (loading) {
@@ -113,7 +92,7 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
     );
   }
 
-  if (recommendations.length === 0) {
+  if (error || displayVideos.length === 0) {
     return null;
   }
 
@@ -133,24 +112,24 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
             className="text-xs text-gray-400 hover:text-purple-400 flex items-center gap-1 transition-colors"
             title="换一批推荐"
           >
-            <span>换一换</span>
+            <span>换一批</span>
             <span>🔄</span>
           </button>
         </div>
         
         <div className="space-y-3">
-          {recommendations.map((rec, index) => (
+          {displayVideos.map((video, index) => (
             <div
-              key={rec.id}
+              key={`${video.bvid}-${page}`}
               className="flex gap-3 p-3 bg-black/40 rounded-lg cursor-pointer hover:bg-black/60 transition-colors group"
-              onClick={() => handleRecommendationClick(rec)}
+              onClick={() => handleVideoClick(video)}
             >
               <div className="relative flex-shrink-0">
                 <div className="w-16 h-12 rounded overflow-hidden bg-gray-800">
-                  {rec.metadata.cover ? (
+                  {video.cover_url ? (
                     <img
-                      src={rec.metadata.cover.includes('http') ? rec.metadata.cover : (rec.metadata.cover.startsWith('/') ? rec.metadata.cover : '/' + rec.metadata.cover)}
-                      alt={rec.title}
+                      src={video.cover_url}
+                      alt={video.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                     />
                   ) : (
@@ -166,18 +145,18 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
               
               <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-medium text-gray-200 line-clamp-1 group-hover:text-purple-400 transition-colors">
-                  {rec.title}
+                  {video.title}
                 </h4>
                 <p className="text-xs text-gray-500 line-clamp-1 mt-1">
-                  {rec.description}
+                  {video.views} · {video.comment_count}条评论
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs bg-purple-900/30 text-purple-400 px-2 py-0.5 rounded">
-                    {rec.reason}
+                    相似度 {Math.round(video.similarity * 100)}%
                   </span>
-                  {rec.metadata.episode > 0 && (
+                  {video.duration && (
                     <span className="text-xs text-gray-500">
-                      第{rec.metadata.episode}期
+                      {video.duration}
                     </span>
                   )}
                 </div>
@@ -192,8 +171,8 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
         
         <div className="mt-4 pt-3 border-t border-gray-800">
           <div className="text-xs text-gray-500 flex items-center justify-between">
-            <span>基于内容相似度和热度分析</span>
-            <span>🧠 AI推荐</span>
+            <span>基于AI语义分析相似内容</span>
+            <span>🧠 智能推荐</span>
           </div>
         </div>
       </div>
