@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { analyticsService } from '../../services/analyticsService';
@@ -42,21 +42,21 @@ interface AISummariesResponse {
 
 const VIDEOS_PER_PAGE = 12;
 
-export default function AISearchPage() {
+// 搜索参数组件
+function SearchParamsWrapper({ children }: { children: (params: { keyword: string }) => React.ReactNode }) {
   const searchParams = useSearchParams();
-  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const keyword = searchParams.get('keyword') || '';
+  return <>{children({ keyword })}</>;
+}
+
+// 主内容组件
+function AISearchContent({ initialKeyword }: { initialKeyword: string }) {
+  const [aiSearchQuery, setAiSearchQuery] = useState(initialKeyword);
   const [aiSearchResults, setAiSearchResults] = useState<SimilarVideo[]>([]);
   const [aiSearchLoading, setAiSearchLoading] = useState(false);
   const [aiFilters, setAiFilters] = useState<SearchFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [aiSummaries, setAiSummaries] = useState<Map<string, string>>(new Map());
-
-  useEffect(() => {
-    const urlSearch = searchParams.get('keyword') || '';
-    if (urlSearch) {
-      setAiSearchQuery(urlSearch);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     analyticsService.trackPageView('ai-search');
@@ -419,5 +419,28 @@ export default function AISearchPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// 加载状态组件
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500"></div>
+        <p className="text-gray-400 mt-4">加载中...</p>
+      </div>
+    </div>
+  );
+}
+
+// 主页面组件
+export default function AISearchPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <SearchParamsWrapper>
+        {({ keyword }) => <AISearchContent initialKeyword={keyword} />}
+      </SearchParamsWrapper>
+    </Suspense>
   );
 }
